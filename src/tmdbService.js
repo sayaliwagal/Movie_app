@@ -46,21 +46,47 @@ export const fetchMovies = async (query = '', selectedGenres = [], selectedYears
         if (selectedGenres.length > 0) {
             queryParams.push(`with_genres=${selectedGenres.join(',')}`);
         }
+        //Add year filter to api call 
+        if(selectedYears.length > 0){
+            //If only year is selected, use primary_release_year
+            if(selectedYears.length === 1){
+                queryParams.push(`primary_release_year=${selectedYears[0]}`);
+            }else {
+                //For multiple years, we'll still need to filter client-side
+                // But we can optimize by setting a range if years are consecutive
+                const years = selectedYears.map(Number).sort((a,b) => a - b);
+                queryParams.push(`primary_release_date.gte=${years[0]}-01-01`);
+                queryParams.push(`primary_release_date.lte=${years[years.length - 1]-12-31}`);
+                
+            }
+        }
+
+        // Add rating filter
+        if (selectedRatings.length > 0) {
+            const minRating = Math.min(...selectedRatings.map(Number));
+            queryParams.push(`vote_average.gte=${minRating}`);
+        }
+        //Add all query parameters to endpoint
         if (queryParams.length > 0) {
             endpoint += `&${queryParams.join('&')}`;
         }
+        console.log('Fetching movie with URL:', endpoint);
         
         const response = await fetch(endpoint, API_OPTIONS);
         if (!response.ok) {
             throw new Error('Failed to fetch movies');
         }
+
         const data = await response.json();
         let filteredMovies = data.results || [];
 
-        if (selectedYears.length > 0) {
-            filteredMovies = filteredMovies.filter(movie =>
-                movie.release_date && selectedYears.includes(String(new Date(movie.release_date).getFullYear()))
-            );
+        // Additional client-side filtering for years if multiple years are selected
+        if (selectedYears.length > 1) {
+            filteredMovies = filteredMovies.filter(movie => {
+                if (!movie.release_date) return false;
+                const movieYear = String(new Date(movie.release_date).getFullYear());
+                return selectedYears.includes(movieYear);
+        });
         }
         if (selectedRatings.length > 0) {
             filteredMovies = filteredMovies.filter(movie =>
@@ -75,23 +101,6 @@ export const fetchMovies = async (query = '', selectedGenres = [], selectedYears
     }
 };
 
-// async function fetchMovieRecommendation(movieId){
-//     const url = `<span class="math-inline">\{TMDB\_BASE\_URL\}/movie/</span>{movieId}/recommendations?api_key=${TMDB_API_KEY}&language=en-US`;
-
-//     try{
-//         const response = await fetch(url, API_OPTIONS);
-//         if(!response.ok){
-//             throw new Error(`HTTP error! status: ${response.status}`);
-
-//         }
-//         const data = await response.json();
-//         return data.results || [];
-//     } catch(e){
-//         console.error('Error fetching movie recommendation:', error);
-//      return [];
-//     }
-  
-// }
 async function fetchMovieRecommendations(movieId) {
     const url = `${TMDB_BASE_URL}/movie/${movieId}/recommendations?api_key=${TMDB_API_KEY}&language=en-US`;
   

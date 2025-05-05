@@ -9,7 +9,7 @@ import YearFilter from '../components/YearFilter.jsx';
 import RatingFilter from '../components/RatingFilter.jsx';
 import SortingOptions from '../components/SortingOptions.jsx';
 import { BrowserRouter as Router, Routes,Route, Link } from 'react-router-dom';
-import { fetchMovieDetails, fetchMovies } from '../tmdbService.js';
+import { fetchMovies } from '../tmdbService.js';
 
 const HomePage = () => {
     const [search, setSearch] =useState('');
@@ -69,6 +69,7 @@ const HomePage = () => {
 
     const handleYearSelection = (years) => {
       setSelectedYears(years);
+      console.log(years);
     };
 
     const handleRatingSelection = (ratings) => {
@@ -78,6 +79,7 @@ const HomePage = () => {
     const handleSortChange = (newSortBy) => {
       setSortBy(newSortBy);
       setCurrentSortLable(sortOptionLables[newSortBy] || 'Sort By ') //Update the label
+      console.log(currentSortLable);
     };
 
   
@@ -104,7 +106,7 @@ const HomePage = () => {
    {currentSortLable !== 'Sort By' && (
     <div className="applied-filters">
       <span className="inline-flex item-center rounded-md-yellow-100 px-2 py-1 text-md font-medium text-gray-100">
-        :- Sorted by : {currentSortLable}
+      :-  {currentSortLable}
       </span>
     </div>
    )}
