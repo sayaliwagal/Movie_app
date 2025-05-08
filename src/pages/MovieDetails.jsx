@@ -1,7 +1,7 @@
 //components/MovieDetails.jsx
 import React, {useState, useEffect}from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchMovieDetails, fetchMovieRecommendations, IMAGE_BASE_URL } from '../tmdbService'; // Adjust path if needed
+import { fetchMovieDetails, fetchMovieRecommendations, fetchMovieWatchProviders, IMAGE_BASE_URL } from '../tmdbService'; // Adjust path if needed
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faTag } from '@fortawesome/free-solid-svg-icons';
 const MovieDetails = () => {
@@ -11,7 +11,7 @@ const MovieDetails = () => {
     const [loading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [recommendations, setRecommendations] = useState([]);
-
+    const [watchProviders, setWatchProviders] = useState({});
     useEffect (() => {
         const getMovieDetails = async () => {
             setIsLoading(true);
@@ -31,9 +31,16 @@ const MovieDetails = () => {
             const data = await fetchMovieRecommendations(movieId);
             setRecommendations(data);
           };
+
+        const getWatchProviders = async () =>{
+            const data = await fetchMovieWatchProviders(movieId);
+            console.log(data);
+            setWatchProviders(data);
+        }  
       
         getMovieDetails();
         getRecommendations();
+        getWatchProviders();
     }, [movieId]);
 
     if(loading) {
@@ -213,31 +220,7 @@ const MovieDetails = () => {
                     </div>
                 </div>
             )}
-    {/* {recommendations.length > 0 && (
-        <div className="mt-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Recommendations</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" >
-            {recommendations.map(recommendation => (
-              <div key={recommendation.id} className="rounded-md shadow-md overflow-hidden">
-                <Link to={`/movie/${recommendation.id}`}>
-                  {recommendation.poster_path ? (
-                    <img
-                      className="w-full h-auto object-cover"
-                      src={`<span class="math-inline">\{IMAGE\_BASE\_URL\}</span>{recommendation.poster_path}`}
-                      alt={recommendation.title}
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-300 flex items-center justify-center text-gray-500">No Poster</div>
-                  )}
-                  <div className="p-2 text-center">
-                    <h3 className="text-sm font-semibold text-gray-800 truncate">{recommendation.title}</h3>
-                  </div>
-                        </Link>
-                    </div>
-                ))}
-            </div>
-        </div> 
-        )}*/}
+ 
         {recommendations.length > 0 && (
         <div className="mt-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Recommendations</h2>
@@ -261,6 +244,40 @@ const MovieDetails = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Watch Providers Section */}(
+      {watchProviders && watchProviders.US && (
+        <div className="mb-6">
+            <h2 className="text-white text-xl font-semibold mb-2">
+                Where to Watch
+            </h2>
+            <div className="bg-gray-800 p-4 rounded-md">
+                {watchProviders.US.flatrate && (
+                    <div className="mb-4">
+                        <h4 className="text-gray-300 font-medium mb-2">Streaming</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {watchProviders.US.flatrate.map(provider => (
+                                <div key={provider.provider_id} className="flex flex-col item-center">
+                                    <img src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} alt={provider.provider_name} className="w-12 h-12 rounded-md" />
+                                    <span className="text-xs text-gray-400 mt-1">{provider.provider_name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {watchProviders.US.link && (
+                    <a 
+                    href={watchProviders.US.link}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className="mt-4 inline-block bg-blue-600 text-white px-4 py- rounded-md hover:bg-blue-700 transition-colors">
+                          View All Watch Options  
+                    </a>
+                )}
+            </div>
         </div>
       )}
     </div> 

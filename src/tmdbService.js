@@ -36,6 +36,21 @@ async function fetchMovieDetails(movieId) {
     }
 }
 
+async function fetchMovieWatchProviders(movieId){
+    const url = `${TMDB_BASE_URL}/movie/${movieId}/watch/providers?api_key=${TMDB_API_KEY}`;
+    try {
+        const response = await fetch(url, API_OPTIONS);
+        if(!response.ok){
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.results || {}; //Return an object with countries as keys
+    }catch(e) {
+        console.error('Error fetching movie watch providers :', e);
+        return {};
+    }
+}
+
 export const fetchMovies = async (query = '', selectedGenres = [], selectedYears = [], selectedRatings = [], sortBy = 'popularity.desc') => {
     try {
         let endpoint = query
@@ -117,4 +132,4 @@ async function fetchMovieRecommendations(movieId) {
     }
   }
 
-export { fetchMovieDetails, fetchMovieRecommendations, IMAGE_BASE_URL };
+export { fetchMovieDetails, fetchMovieRecommendations, fetchMovieWatchProviders, IMAGE_BASE_URL };
