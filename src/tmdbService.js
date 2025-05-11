@@ -85,7 +85,7 @@ export const fetchMovies = async (query = '', selectedGenres = [], selectedYears
         if (queryParams.length > 0) {
             endpoint += `&${queryParams.join('&')}`;
         }
-        console.log('Fetching movie with URL:', endpoint);
+        // console.log('Fetching movie with URL:', endpoint);
         
         const response = await fetch(endpoint, API_OPTIONS);
         if (!response.ok) {
@@ -132,4 +132,20 @@ async function fetchMovieRecommendations(movieId) {
     }
   }
 
-export { fetchMovieDetails, fetchMovieRecommendations, fetchMovieWatchProviders, IMAGE_BASE_URL };
+  async function fetchMovieTitleSuggestions(query){
+    const url = `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&language=en-US&query=${encodeURIComponent(query)}`;
+    try {
+        const response = await fetch(url, API_OPTIONS);
+        if(!response.ok){
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.results || []; //This will return of movie objects
+    }catch(error){
+        console.error('Error fetching movie suggestions:', error);
+        return [];
+    }
+  }
+  
+
+export { fetchMovieDetails, fetchMovieRecommendations, fetchMovieWatchProviders, fetchMovieTitleSuggestions, IMAGE_BASE_URL };

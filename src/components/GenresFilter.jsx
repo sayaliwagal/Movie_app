@@ -68,7 +68,7 @@ const GenresFilter = ({ onGenreChange, selectedGenres }) => {
 
 
     return (
-        <div className='mb-4' relative>
+        <div className='mb-4 relative'>
             {loading  ? (
                 <p className="text-lg text-white">Loading genres...</p>
             ) : (

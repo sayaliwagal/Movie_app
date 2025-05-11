@@ -69,7 +69,7 @@ const HomePage = () => {
 
     const handleYearSelection = (years) => {
       setSelectedYears(years);
-      console.log(years);
+      // console.log(years);
     };
 
     const handleRatingSelection = (ratings) => {
@@ -93,7 +93,7 @@ const HomePage = () => {
         <header>
           <img src="./mVLozhndkLrweZg4wYPKsb-1200-80.jpg" alt="" />
           <h1>Find <span className='text-gradient'>Movie</span> You'll Enjoy witout the Hassle</h1>
-          <Search search={search} setSearch = {setSearch} />
+          <Search onSearch={setSearch} />
         </header>
 
         <div className="filters flex flex-col md:flex-row gap-4 mt-8 mb-8 justify-center">
