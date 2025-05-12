@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchMovies, fetchMovieTitleSuggestions } from '../tmdbService';
 
-const Search = ({ onSearch })  => {
+const Search = ({ onSearch, setLastSearchQuery })  => {
   const [query, setQuery] = useState('');
   const[suggestions, setSuggestions] = useState([]);
   const[showSuggestions, setShowSuggestions] = useState(false);
@@ -34,7 +34,11 @@ const Search = ({ onSearch })  => {
   }, [query]);
 
   const handleInputChange = (e) => {
-    setQuery(e.target.value);
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    if(setLastSearchQuery){
+      setLastSearchQuery(newQuery);
+    }
   };
 
   const handleSuggestionClick = (movie) => {
