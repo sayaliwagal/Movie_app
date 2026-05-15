@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Search from '../components/Search.jsx';
 import { Spinner } from "flowbite-react";
-import MovieCard from '../components/MovieCard.jsx';
+import MovieCardEnhanced from '../components/MovieCardEnhanced.jsx';
 import { useDebounce } from 'react-use';
 import { getTrendingmovies, updateSearchCount } from '../appwrite.js';
 import GenresFilter from '../components/GenresFilter.jsx';
 import YearFilter from '../components/YearFilter.jsx';
 import RatingFilter from '../components/RatingFilter.jsx';
 import SortingOptions from '../components/SortingOptions.jsx';
+import PaginationComponent from '../components/Pagination.jsx';
+import SkeletonLoader from '../components/SkeletonLoader.jsx';
+import NoResults from '../components/NoResults.jsx';
 import { BrowserRouter as Router, Routes,Route, Link } from 'react-router-dom';
 import { fetchMovies } from '../tmdbService.js';
 
@@ -27,6 +30,9 @@ const HomePage = () => {
     const [currentSortLable, setCurrentSortLable] = useState('Popularity (Descending)'); //State for sortLable to display 
     const [lastSearchQuery, setLastSearchQuery] = useState('');
     const [didYouMeanSuggestion, setDidYouMeanSuggestion] = useState('');
+    const [currentPage, setCurrentPage] = useState(1); // Pagination state
+    const [totalPages, setTotalPages] = useState(1); // Total pages
+    const [totalResults, setTotalResults] = useState(0); // Total results
     const sortOptionLables ={
       'popularity.desc'    : 'Popularity (Descending)',
       'release_date.desc'  : 'Release Date (Newest First)',
@@ -39,11 +45,13 @@ const HomePage = () => {
       const loadMovies = async () => {
         setIsLoading(true);
         setErrorMessage('');
-        const movies = await fetchMovies(debouncedSearch,selectedGenres,selectedYears,selectedRatings, sortBy);
-        setMovieList(movies);
+        const result = await fetchMovies(debouncedSearch,selectedGenres,selectedYears,selectedRatings, sortBy, currentPage);
+        setMovieList(result.movies);
+        setTotalPages(result.totalPages);
+        setTotalResults(result.totalResults);
         setIsLoading(false);
         setDidYouMeanSuggestion(''); // Clear previos suggestion
-        if(debouncedSearch && movies.length === 0 && lastSearchQuery && lastSearchQuery.trim() != ""){
+        if(debouncedSearch && result.movies.length === 0 && lastSearchQuery && lastSearchQuery.trim() != ""){
           //Try to find a 'Did You Mean?' Suggestion
           const allMovieTitles = trendingMovies.map(movie =>movie.title); //or fetch a border list
           const suggestion = findDidYouMean(lastSearchQuery, allMovieTitles);
@@ -51,11 +59,11 @@ const HomePage = () => {
             setDidYouMeanSuggestion(suggestion);
           }
         }
-        if(debouncedSearch && movies.length > 0){
-          await updateSearchCount(debouncedSearch, movies[0]);
+        if(debouncedSearch && result.movies.length > 0){
+          await updateSearchCount(debouncedSearch, result.movies[0]);
         }
     };
-  loadMovies(); }, [debouncedSearch, selectedGenres, selectedYears, selectedRatings, sortBy, lastSearchQuery]);
+  loadMovies(); }, [debouncedSearch, selectedGenres, selectedYears, selectedRatings, sortBy, currentPage]);
 
    const findDidYouMean = (query, titles) => {
     const bestMatch = matchRoutes.betMatch;
@@ -86,19 +94,23 @@ const HomePage = () => {
 
     const handleGenreSelection = useCallback((genres) => {
       setSelectedGenres(genres);
+      setCurrentPage(1); // Reset to page 1 when filters change
     },[]);
 
     const handleYearSelection = useCallback((years) => {
       setSelectedYears(years);
+      setCurrentPage(1); // Reset to page 1 when filters change
       // console.log(years);
     }, []);
 
     const handleRatingSelection = useCallback((ratings) => {
       setSelectedRatings(ratings);
+      setCurrentPage(1); // Reset to page 1 when filters change
     }, []);
 
     const handleSortChange = useCallback((newSortBy) => {
       setSortBy(newSortBy);
+      setCurrentPage(1); // Reset to page 1 when sorting changes
       setCurrentSortLable(sortOptionLables[newSortBy] || 'Sort By ') //Update the label
       console.log(currentSortLable);
     }, []);
@@ -107,6 +119,21 @@ const HomePage = () => {
     useEffect(() => {
       loadTrendingMovies();
     }, []);
+
+    const handlePageChange = (page) => {
+      setCurrentPage(page);
+    };
+
+    const handleResetFilters = () => {
+      setSearch('');
+      setSelectedGenres([]);
+      setSelectedYears([]);
+      setSelectedRatings([]);
+      setSortBy('popularity.desc');
+      setCurrentPage(1);
+      setCurrentSortLable('Popularity (Descending)');
+    };
+
   return (
     <main className='box-box-border p-16 m-0 overflow-x-hidden'>
        <div className='pattern'></div>
@@ -155,21 +182,39 @@ const HomePage = () => {
        
         <section className='all-movies'>
           <h2>All Movies</h2>
-      {isLoading ? ( <div className='text-center'><Spinner color="warning"  size="md" /></div>) :
-      errorMesage ? (<p className='text-red-500'>{errorMesage}</p>
-      ): ( <ul>
-      
-        {movieList.map((movie) => (
-          <li  key={movie.id}>
-              <MovieCard key={movie.id} movie ={movie} />
-                {/* Add a Link to the MovieDetails page */}
-                  <Link to={`/movie/${movie.id}`}>View Details</Link>
-          </li>
-        ))}
-
-    
-          </ul>) }
+          {totalResults > 0 && !isLoading && (
+            <p className='results-counter'>
+              Showing {(currentPage - 1) * 20 + 1} - {Math.min(currentPage * 20, totalResults)} of {totalResults} results
+            </p>
+          )}
+      {isLoading ? ( 
+        <SkeletonLoader count={8} />
+      ) : errorMesage ? (
+        <div className='text-red-500 text-center py-8'>{errorMesage}</div>
+      ) : movieList.length === 0 ? (
+        <NoResults 
+          searchQuery={debouncedSearch}
+          onReset={handleResetFilters}
+        />
+      ) : (
+        <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+          {movieList.map((movie) => (
+            <li key={movie.id} className='h-full'>
+              <MovieCardEnhanced movie={movie} />
+            </li>
+          ))}
+        </ul>
+      )}
         </section>
+
+        {/* Pagination Component */}
+        {totalPages > 1 && (
+          <PaginationComponent 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={handlePageChange}
+          />
+        )}
        </div>
     </main>
  

@@ -51,11 +51,11 @@ async function fetchMovieWatchProviders(movieId){
     }
 }
 
-export const fetchMovies = async (query = '', selectedGenres = [], selectedYears = [], selectedRatings = [], sortBy = 'popularity.desc') => {
+export const fetchMovies = async (query = '', selectedGenres = [], selectedYears = [], selectedRatings = [], sortBy = 'popularity.desc', page = 1) => {
     try {
         let endpoint = query
-            ? `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&sort_by=${sortBy}` 
-            : `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=${sortBy}`;
+            ? `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&sort_by=${sortBy}&page=${page}` 
+            : `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=${sortBy}&page=${page}`;
 
         const queryParams = [];
         if (selectedGenres.length > 0) {
@@ -109,10 +109,16 @@ export const fetchMovies = async (query = '', selectedGenres = [], selectedYears
             );
         }
 
-        return filteredMovies;
+        // Return both movies and pagination info
+        return {
+            movies: filteredMovies,
+            totalPages: data.total_pages || 1,
+            totalResults: data.total_results || 0,
+            currentPage: page
+        };
     } catch (error) {
         console.error(`Error fetching movies: ${error}`);
-        return [];
+        return { movies: [], totalPages: 1, totalResults: 0, currentPage: 1 };
     }
 };
 
